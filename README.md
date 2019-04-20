@@ -38,19 +38,19 @@ binフォルダ内にxlsファイルが入っています。
 
 #### 2.準備
 以下の図のように、綜絖とタイアップと踏み木を黒くします。  
-![ドラフト3-1](http://sky.geocities.jp/riko_21_riko/misc_img/img652_draft3-1.PNG)
+![ドラフト3-1](https://blog-imgs-95.fc2.com/r/i/k/riko122/img652_draft3-1.png)
 
 #### 3.組織図
 「組織図」ボタンをクリックすると   
-![ドラフト3-2](http://sky.geocities.jp/riko_21_riko/misc_img/img653_draft3-2.PNG)  
+![ドラフト3-2](https://blog-imgs-95.fc2.com/r/i/k/riko122/img653_draft3-2.png)  
 こんな風に、どんな組織になるかが表示されます。
 
 #### 4.配色図
 以下の図のように、色を指定して、  
-![ドラフト3-3](http://sky.geocities.jp/riko_21_riko/misc_img/img654_draft3-3.PNG)  
+![ドラフト3-3](https://blog-imgs-95.fc2.com/r/i/k/riko122/img654_draft3-3.png)  
 
 「配色図」ボタンをクリックすると   
-![ドラフト3-4](http://sky.geocities.jp/riko_21_riko/misc_img/img655_draft3-4.PNG)  
+![ドラフト3-4](https://blog-imgs-95.fc2.com/r/i/k/riko122/img655_draft3-4.png)  
 こんな風に、どんな配色になるのかが表示されます。
 
 #### お願い
