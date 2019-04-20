@@ -39,28 +39,25 @@ Private Sub init()
     f = Cells(7, 5)
     
     ' 綜絖枚数を読み取る
-    If Cells(7, 17) = "" Then '書いてなければ4を初期値とする
-        Cells(7, 17) = 4
+    If Cells(7, 14) = "" Then '書いてなければ4を初期値とする
+        Cells(7, 14) = 4
     End If
-    n = Cells(7, 17)
+    n = Cells(7, 14)
         
-    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
-    kind = Cells(7, 11)  ' ↑か↓
-    
     ' 図の幅を読み取る。
-    If Cells(7, 35) = "" Then '書いてなければ48を初期値とする
-        Cells(7, 35) = 48
+    If Cells(7, 32) = "" Then '書いてなければ48を初期値とする
+        Cells(7, 32) = 48
     End If
-    w = Cells(7, 35)
+    w = Cells(7, 32)
     
     ' 図の高さを読み取る。
-    If Cells(7, 45) = "" Then '書いてなければ48を初期値とする
-        Cells(7, 45) = 48
+    If Cells(7, 42) = "" Then '書いてなければ48を初期値とする
+        Cells(7, 42) = 48
     End If
-    h = Cells(7, 45)
+    h = Cells(7, 42)
     
     ' タイアップの位置を読み取る
-    tie_up_position = Cells(7, 27)
+    tie_up_position = Cells(7, 24)
     
     Select Case tie_up_position
         Case "右上"
@@ -208,6 +205,9 @@ Public Sub black()
     Dim currentRowStatus() As Boolean
     
     Call init
+    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
+    kind = Cells(6, 40)  ' ↑か↓
+    
     
     ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
     Call writeDrawUp
@@ -254,6 +254,9 @@ Public Sub color()
     Dim beforeRowStatus() As Boolean
     
     Call init
+    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
+    kind = Cells(6, 40)  ' ↑か↓
+    
     
     ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
     Call writeDrawUp
