@@ -202,16 +202,17 @@ Public Sub black()
     Dim j As Integer
     Dim l As Integer
     Dim k As Integer
+    Dim initRowStatus() As Boolean
     Dim currentRowStatus() As Boolean
     
     Call init
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
-    
     ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
     Call writeDrawUp
     
+    ReDim initRowStatus(w)
     ReDim currentRowStatus(w)
 
     ' 組織図対象範囲をクリア
@@ -225,11 +226,12 @@ Public Sub black()
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    
     lastR = lastRow()
     
+    initRowStatus = setInitRowStatus()
+    
     For l = firstR To lastR
-        currentRowStatus = getCurrentRowStatus(l)
+        currentRowStatus = getCurrentRowStatus(l, initRowStatus)
         For i = firstC To lastC
             ' 経糸が上のマスは黒く塗る
             If currentRowStatus(i) = True Then
@@ -250,6 +252,7 @@ Public Sub color()
     Dim j As Integer
     Dim k As Integer
     Dim l As Integer
+    Dim initRowStatus() As Boolean
     Dim currentRowStatus() As Boolean
     Dim beforeRowStatus() As Boolean
     
@@ -261,6 +264,7 @@ Public Sub color()
     ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
     Call writeDrawUp
     
+    ReDim initRowStatus(w)
     ReDim currentRowStatus(w)
     ReDim beforeRowStatus(w)
 
@@ -276,15 +280,15 @@ Public Sub color()
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    
     lastR = lastRow()
     
+    initRowStatus = setInitRowStatus()
     For i = x0 To x1
         beforeRowStatus(i) = False
     Next
 
     For l = firstR To lastR
-        currentRowStatus = getCurrentRowStatus(l)
+        currentRowStatus = getCurrentRowStatus(l, initRowStatus)
         For i = firstC To lastC
             ' 経糸が上のマスは経糸の色で塗る。そうでなければ緯糸の色で塗る
             If currentRowStatus(i) = True Then
@@ -318,7 +322,7 @@ Private Sub writeDrawUp()
 End Sub
 
 ' 現在の行の各セルについて、経糸が上になっていればTrue, そうでなければFalseを配列に登録する
-Private Function getCurrentRowStatus(ByVal row As Integer) As Boolean()
+Private Function getCurrentRowStatus(ByVal row As Integer, ByRef initRowStatus() As Boolean) As Boolean()
     Dim i As Integer
     Dim j As Integer
     Dim k As Integer
@@ -328,13 +332,7 @@ Private Function getCurrentRowStatus(ByVal row As Integer) As Boolean()
     
     ' 配列の初期化
     ReDim currentRowStatus(w)
-    For i = x0 To x1
-        If kind = "↑" Then
-            currentRowStatus(i) = False
-        Else ' ろくろ式
-            currentRowStatus(i) = True
-        End If
-    Next
+    currentRowStatus = initRowStatus
    
     ' 踏み方図で黒いマスを探す。
     For j = x2 To x3
@@ -357,26 +355,31 @@ Private Function getCurrentRowStatus(ByVal row As Integer) As Boolean()
             Next
         End If
     Next
+    getCurrentRowStatus = currentRowStatus
+End Function
+
+' 各行の状態初期化。kindに応じて変わる。
+Private Function setInitRowStatus() As Boolean()
+    Dim initRowStatus() As Boolean
+    Dim i As Integer
+    Dim k As Integer
     
-    ' ロクロ式の場合、空羽でも黒(True)になってしまうため、白(False)にする
-    If kind = "↓" Then
-        For i = x0 To x1
-            f = True
-            '綜絖の通し方図対象行で、黒のマスを探す。黒のマスがあればその列は空羽ではない
+    ReDim initRowStatus(w)
+    ' 配列の初期化
+    For i = x0 To x1
+        If kind = "↑" Then ' 天秤式など。false(緯糸が上)で初期化
+            initRowStatus(i) = False
+        Else ' ろくろ式など。基本true(経糸が上)で初期化。但し空羽はfalse。
+            initRowStatus(i) = False
             For k = y0 To y1
                 If Cells(k, i).Interior.ColorIndex = 1 Then
-                    f = False
+                    initRowStatus(i) = True
                     Exit For
                 End If
             Next
-            ' Exit Forされなかった場合は、空羽
-            If f = True Then
-                currentRowStatus(i) = False
-            End If
-        Next
-    End If
-    
-    getCurrentRowStatus = currentRowStatus
+        End If
+    Next
+    setInitRowStatus = initRowStatus
 End Function
 
 ' 組織図の対象開始行(踏み方図に黒マスがある最初の行)を得る
