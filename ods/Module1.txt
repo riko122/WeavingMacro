@@ -1,0 +1,475 @@
+Rem Attribute VBA_ModuleType=VBAModule
+Option VBASupport 1
+'-----------------------------------------------------------------
+' 織物用組織図＆配色図マクロ
+'   by Riko(https://github.com/riko122/WeavingMacro)
+' This software is released under the Mozilla Public License 2.0.
+'-----------------------------------------------------------------
+Option Explicit
+
+Const header_line = 7 ' ヘッダー部分の行数
+
+' 全サブルーチンで共通に使用する変数
+Dim x0 As Integer '綜絖の通し方図・組織図の基点列
+Dim y0 As Integer '綜絖の通し方図・タイアップの基点行
+Dim x1 As Integer '綜絖の通し方図・組織図の最終列
+Dim y1 As Integer '綜絖の通し方図・タイアップの最終行
+Dim x2 As Integer 'タイアップ・踏み方図の基点列
+Dim y2 As Integer '組織図・踏み方図の基点行
+Dim x3 As Integer 'タイアップ・踏み方図の最終列
+Dim y3 As Integer '組織図・踏み方図の最終行
+Dim x9 As Integer '緯糸色指定列
+Dim y9 As Integer '経糸色指定行
+
+Dim n As Integer 'n枚綜絖を使用。
+Dim f As Integer 'f本の踏み木を使用
+
+Dim w As Integer '組織図の幅
+Dim h As Integer '組織図の高さ
+
+Dim kind As String ' 踏み木を踏んだら、綜絖が上がるか下がるか。
+Dim tie_up_position As String 'タイアップをどの位置にするか
+
+'初期値設定
+Private Sub init()
+    
+    ' 踏み木本数を読み取る。
+    If Cells(7, 6) = "" Then '書いてなければ4を初期値とする
+        Cells(7, 6) = 4
+    End If
+    f = Cells(7, 6)
+    
+    ' 綜絖枚数を読み取る
+    If Cells(7, 15) = "" Then '書いてなければ4を初期値とする
+        Cells(7, 15) = 4
+    End If
+    n = Cells(7, 15)
+        
+    ' 図の幅を読み取る。
+    If Cells(7, 35) = "" Then '書いてなければ48を初期値とする
+        Cells(7, 35) = 48
+    End If
+    w = Cells(7, 35)
+    
+    ' 図の高さを読み取る。
+    If Cells(7, 45) = "" Then '書いてなければ48を初期値とする
+        Cells(7, 45) = 48
+    End If
+    h = Cells(7, 45)
+    
+    ' タイアップの位置を読み取る
+    tie_up_position = Cells(7, 26)
+    
+    Select Case tie_up_position
+        Case "右上"
+            x0 = 1
+            x1 = x0 + w - 1
+            x2 = x1 + 2
+            x3 = x2 + f - 1
+            x9 = x3 + 2
+            y9 = header_line + 2
+            y0 = y9 + 2
+            y1 = y0 + n - 1
+            y2 = y1 + 2
+            y3 = y2 + h - 1
+        Case "右下"
+            x0 = 1
+            x1 = x0 + w - 1
+            x2 = x1 + 2
+            x3 = x2 + f - 1
+            x9 = x3 + 2
+            y2 = header_line + 2
+            y3 = y2 + h - 1
+            y0 = y3 + 2
+            y1 = y0 + n - 1
+            y9 = y1 + 2
+        Case "左上"
+            x9 = 1
+            x2 = x9 + 2
+            x3 = x2 + f - 1
+            x0 = x3 + 2
+            x1 = x0 + w - 1
+            y9 = header_line + 2
+            y0 = y9 + 2
+            y1 = y0 + n - 1
+            y2 = y1 + 2
+            y3 = y2 + h - 1
+        Case "左下"
+            x9 = 1
+            x2 = x9 + 2
+            x3 = x2 + f - 1
+            x0 = x3 + 2
+            x1 = x0 + w - 1
+            y2 = header_line + 2
+            y3 = y2 + h - 1
+            y0 = y3 + 2
+            y1 = y0 + n - 1
+            y9 = y1 + 2
+    End Select
+End Sub
+
+' 初期化ボタンクリックで実行。
+Public Sub clear()
+
+    Call init
+
+    ' クリア。ヘッダー以外の行をちょっと多めに削除する。
+    Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
+    Selection.Delete Shift:=xlUp
+
+    ' 対象範囲のマスの高さをそろえる。
+    Rows(header_line + 1 & ":" & header_line + n + h + 5).Select
+    Selection.RowHeight = 11
+
+    ' 綜絖通し部分のマス目を書く
+    Range(Cells(y0, x0), Cells(y1, x1)).Select
+    Selection.Borders(xlEdgeLeft).Weight = xlThin
+    Selection.Borders(xlEdgeTop).Weight = xlThin
+    Selection.Borders(xlEdgeBottom).Weight = xlThin
+    Selection.Borders(xlEdgeRight).Weight = xlThin
+    Selection.Borders(xlInsideVertical).Weight = xlThin
+    Selection.Borders(xlInsideHorizontal).Weight = xlThin
+
+    ' タイアップ部分のマス目を書く
+    Range(Cells(y0, x2), Cells(y1, x3)).Select
+    Selection.Borders(xlEdgeLeft).Weight = xlThin
+    Selection.Borders(xlEdgeTop).Weight = xlThin
+    Selection.Borders(xlEdgeBottom).Weight = xlThin
+    Selection.Borders(xlEdgeRight).Weight = xlThin
+    Selection.Borders(xlInsideVertical).Weight = xlThin
+    Selection.Borders(xlInsideHorizontal).Weight = xlThin
+
+    ' 経糸色指定行に「経糸の色」と書く
+    Range(Cells(y9, x2), Cells(y9, x3)).Select
+    If x1 < x2 Then
+        ActiveCell.FormulaR1C1 = "←経糸の色"
+    Else
+        ActiveCell.FormulaR1C1 = "経糸の色→"
+    End If
+    With Selection.Font
+        .Size = 6
+    End With
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .ShrinkToFit = False
+        .MergeCells = True
+    End With
+
+    ' 緯糸色指定列に「緯糸の色」と書く
+    Range(Cells(y0, x9), Cells(y1, x9)).Select
+    If y1 < y2 Then
+        ActiveCell.FormulaR1C1 = "緯糸の色↓"
+    Else
+        ActiveCell.FormulaR1C1 = "↑緯糸の色"
+    End If
+    With Selection.Font
+        .Size = 6
+    End With
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = False
+        .Orientation = xlVertical
+        .AddIndent = False
+        .ShrinkToFit = False
+        .MergeCells = True
+    End With
+
+    ' 組織図部分のマス目を書く
+    Call writeDrawUp
+
+    ' 踏み木部分のマス目を書く
+    Range(Cells(y2, x2), Cells(y3, x3)).Select
+    Selection.Borders(xlEdgeLeft).Weight = xlThin
+    Selection.Borders(xlEdgeTop).Weight = xlThin
+    Selection.Borders(xlEdgeBottom).Weight = xlThin
+    Selection.Borders(xlEdgeRight).Weight = xlThin
+    Selection.Borders(xlInsideVertical).Weight = xlThin
+    Selection.Borders(xlInsideHorizontal).Weight = xlThin
+
+End Sub
+
+' 組織図ボタンクリックで実行。
+Public Sub black()
+    Dim firstC As Integer
+    Dim lastC As Integer
+    Dim firstR As Integer
+    Dim lastR As Integer
+    Dim i As Integer
+    Dim j As Integer
+    Dim l As Integer
+    Dim k As Integer
+    Dim initRowStatus() As Boolean    
+    Dim currentRowStatus() As Boolean
+    
+    Call init
+    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
+    kind = Cells(6, 40)  ' ↑か↓
+        
+    ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
+    Call writeDrawUp
+    
+    ReDim initRowStatus(w)
+    ReDim currentRowStatus(w)
+
+    ' 組織図対象範囲をクリア
+    Range(Cells(y2, x0), Cells(y3, x1)).Interior.ColorIndex = xlNone
+    
+    firstC = firstColumn()
+    lastC = lastColumn()
+    
+    firstR = firstRow()
+    If firstR = 0 Then
+        MsgBox ("踏み方図が黒く塗られていません")
+        Exit Sub
+    End If
+    lastR = lastRow()
+
+    Call setInitRowStatus(initRowStatus)
+    
+    For l = firstR To lastR
+        ' 初期値設定
+        For i = firstC To lastC
+            currentRowStatus(i) = initRowStatus(i)
+        Next       		
+        Call getCurrentRowStatus(l, currentRowStatus)
+        For i = firstC To lastC
+            ' 経糸が上のマスは黒く塗る
+            If currentRowStatus(i) = True Then
+                Cells(l, i).Interior.ColorIndex = 1
+            End If
+        Next
+    Next
+    
+End Sub
+
+' 配色図ボタンクリックで実行。
+Public Sub color()
+    Dim firstC As Integer
+    Dim lastC As Integer
+    Dim firstR As Integer
+    Dim lastR As Integer
+    Dim i As Integer
+    Dim j As Integer
+    Dim k As Integer
+    Dim l As Integer
+    Dim initRowStatus() As Boolean    
+    Dim currentRowStatus() As Boolean
+    Dim beforeRowStatus() As Boolean
+
+    Call init
+    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
+    kind = Cells(6, 40)  ' ↑か↓
+        
+    ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
+    Call writeDrawUp
+
+    ReDim initRowStatus(w)
+    ReDim currentRowStatus(w)
+    ReDim beforeRowStatus(w)
+
+    firstC = firstColumn()
+    If firstC = 0 Then
+        MsgBox ("綜絖の通し方図が黒く塗られていません")
+        Exit Sub
+    End If
+    lastC = lastColumn()
+
+    firstR = firstRow()
+    If firstR = 0 Then
+        MsgBox ("踏み方図が黒く塗られていません")
+        Exit Sub
+    End If
+    lastR = lastRow()
+    
+    Call setInitRowStatus(initRowStatus)
+    For i = x0 To x1
+        beforeRowStatus(i) = False
+    Next
+
+    For l = firstR To lastR
+        ' 初期値設定
+        For i = firstC To lastC
+            currentRowStatus(i) = initRowStatus(i)
+        Next       
+        Call getCurrentRowStatus(l, currentRowStatus)
+        For i = firstC To lastC
+            ' 経糸が上のマスは経糸の色で塗る。そうでなければ緯糸の色で塗る
+            If currentRowStatus(i) = True Then
+                Cells(l, i).Interior.color = Cells(y9, i).Interior.color
+                ' 前の行も経糸が上なら、上の罫線をなしにする
+                If beforeRowStatus(i) = True Then
+                    Range(Cells(l, i), Cells(l, i)).Borders(xlEdgeTop).LineStyle = xlNone
+                End If
+            Else
+                Cells(l, i).Interior.color = Cells(l, x9).Interior.color
+                ' 左のセルも緯糸が上なら、左の罫線をなしにする
+                If i > firstC And currentRowStatus(i - 1) = False Then
+                    Range(Cells(l, i), Cells(l, i)).Borders(xlEdgeLeft).LineStyle = xlNone
+                End If
+            End If
+        Next
+        For i = firstC To lastC
+            beforeRowStatus(i) = currentRowStatus(i)
+        Next
+    Next
+End Sub
+
+' 組織図部分のマス目を書く
+Private Sub writeDrawUp()
+    Range(Cells(y2, x0), Cells(y3, x1)).Select
+    Selection.Borders(xlEdgeLeft).Weight = xlThin
+    Selection.Borders(xlEdgeTop).Weight = xlThin
+    Selection.Borders(xlEdgeBottom).Weight = xlThin
+    Selection.Borders(xlEdgeRight).Weight = xlThin
+    Selection.Borders(xlInsideVertical).Weight = xlThin
+    Selection.Borders(xlInsideHorizontal).Weight = xlThin
+
+End Sub
+
+' 現在の行の各セルについて、経糸が上になっていればTrue, そうでなければFalseを配列に登録する
+Private Sub getCurrentRowStatus(ByVal row As Integer, currentRowStatus)
+    Dim i As Integer
+    Dim j As Integer
+    Dim k As Integer
+    Dim l As Integer
+    Dim f As Boolean
+    
+    ' 踏み方図で黒いマスを探す。
+    For j = x2 To x3
+        If (Cells(row, j).Interior.ColorIndex = 1) Then
+            ' そのマスの列のタイアップで黒のマスを探す
+            For k = y0 To y1
+                If Cells(k, j).Interior.ColorIndex = 1 Then
+                    ' そのマスの行の綜絖の通し方が黒い列の組織点は経糸が上に出るのでTrueにする
+                    ' ロクロ式なら、緯糸が上に出るのでFalseにする（そのため初期化で元がTrueにしてある）
+                    For i = x0 To x1
+                        If Cells(k, i).Interior.ColorIndex = 1 Then
+                            If currentRowStatus(i) = False Then
+                                currentRowStatus(i) = True
+                            Else
+                                currentRowStatus(i) = False
+                            End If
+                        End If
+                    Next
+                End If
+            Next
+        End If
+    Next
+End Sub
+
+' 各行の状態初期化。kindに応じて変わる。
+Private Sub setInitRowStatus(initRowStatus)
+    Dim i As Integer
+    Dim k As Integer
+    
+    ' 配列の初期化
+    For i = x0 To x1
+        If kind = "↑" Then ' 天秤式など。false(緯糸が上)で初期化
+            initRowStatus(i) = False
+        Else ' ろくろ式など。基本true(経糸が上)で初期化。但し空羽はfalse。
+            initRowStatus(i) = False
+            For k = y0 To y1
+                If Cells(k, i).Interior.ColorIndex = 1 Then
+                    initRowStatus(i) = True
+                    Exit For
+                End If
+            Next
+        End If
+    Next
+End Sub
+
+' 組織図の対象開始行(踏み方図に黒マスがある最初の行)を得る
+Private Function firstRow() As Integer
+    Dim first As Integer
+    Dim k As Integer
+    Dim l As Integer
+    
+    first = 0
+    For l = y2 To y3
+        '踏み方図対象列で黒のマスを探す。黒のマスがあればその行は有効
+        For k = x2 To x3
+            If Cells(l, k).Interior.ColorIndex = 1 Then
+                first = l
+                Exit For
+            End If
+        Next
+        If first > 0 Then
+            Exit For '有効行があればそこがラスト行なので終了
+        End If
+    Next
+    firstRow = first
+End Function
+
+' 組織図の対象最終行(踏み方図に黒マスがある最後の行)を得る
+Private Function lastRow() As Integer
+    Dim last As Integer
+    Dim k As Integer
+    Dim l As Integer
+    
+    last = 0
+    For l = y3 To y2 Step -1
+        '踏み方図対象列で黒のマスを探す。黒のマスがあればその行は有効
+        For k = x2 To x3
+            If Cells(l, k).Interior.ColorIndex = 1 Then
+                last = l
+                Exit For
+            End If
+        Next
+        If last > 0 Then
+            Exit For '有効行があればそこがラスト行なので終了
+        End If
+    Next
+    lastRow = last
+End Function
+
+' 組織図の対象開始列（綜絖の通し方図に黒マスがある最初の列）を得る
+Private Function firstColumn() As Integer
+    Dim first As Integer
+    Dim i As Integer
+    Dim k As Integer
+    
+    first = 0
+    For i = x0 To x1
+        '綜絖の通し方図対象行で、黒のマスを探す。黒のマスがあればその行は有効
+        For k = y0 To y1
+            If Cells(k, i).Interior.ColorIndex = 1 Then
+                first = i
+                Exit For
+            End If
+        Next
+        If first > 0 Then
+            Exit For
+        End If
+    Next
+    firstColumn = first
+End Function
+
+' 組織図の対象最終列（綜絖の通し方図に黒マスがある最後の列）を得る
+Private Function lastColumn() As Integer
+    Dim last As Integer
+    Dim i As Integer
+    Dim k As Integer
+    
+    last = 0
+    For i = x1 To x0 Step -1
+        '綜絖の通し方図対象行で、黒のマスを探す。黒のマスがあればその行は有効
+        For k = y0 To y1
+            If Cells(k, i).Interior.ColorIndex = 1 Then
+                last = i
+                Exit For
+            End If
+        Next
+        If last > 0 Then
+            Exit For
+        End If
+    Next
+    lastColumn = last
+End Function
+
+
+
