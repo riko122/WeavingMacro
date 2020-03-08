@@ -14,8 +14,11 @@
 - Windows 10 + Excel 2010
 - Windows 10 + Excel 2013
 - Windows 10 + Excel 2016
+- MacOS Mojave 10.14.6 + Excel for Mac 2019
 
 他の環境でも動いたら、ここに追記しますので、commitへのコメントなどでご一報いただけると有難いです。
+2020/3/8にMacOS Mojaveでの動作報告をいただいたので追加しました。
+
 
 なお、LibreOfficeで動くものを、odsフォルダ以下に置きました。 
 LibreOffice版なら、Mac OSでも動くのではないかと期待しています。
