@@ -33,7 +33,9 @@ https://github.com/vbaidiot/Ariawase#license
 
 ## Setup
 「Clone or download」から「Download ZIP」をクリックしてZIPファイルをDL後解凍してください。  
-binフォルダ内にxlsファイルが入っています。
+binフォルダ内にxlsmファイルが入っています。
+古いExcel用にxlsファイル(V3.8.2)も入っていますが、基本的にはxlsmファイル(V3.9)をご利用ください。
+今後、保守はxlsmファイルの方のみを行う予定です。
 
 ## Usage
 
@@ -81,6 +83,8 @@ Mozilla Public License 2.0の下、使用にあたっては制限はありませ
 
 ## History
 
+- 2020/ 7/12 V3.9   ファイル形式をxlsmで保存
+- 2020/ 7/12 V3.8.2 「緯糸の色↓」の矢印が下を向くように修正
 - 2019/ 5/ 3 LibreOffice版のV3.8.2oもGitHubでの管理下に追加
 - 2019/ 5/ 1 V3.8.1 マクロの内部的な処理変更
 - 2019/ 4/20 V3.8   「↑又は↓」を選ぶセルの位置の変更
