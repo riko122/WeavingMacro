@@ -32,7 +32,7 @@ https://github.com/vbaidiot/Ariawase#license
 
 
 ## Setup
-「Clone or download」から「Download ZIP」をクリックしてZIPファイルをDL後解凍してください。  
+「Code」から「Download ZIP」をクリックしてZIPファイルをDL後解凍してください。  
 binフォルダ内にxlsmファイルが入っています。
 古いExcel用にxlsファイル(V3.8.2)も入っていますが、基本的にはxlsmファイル(V3.9)をご利用ください。
 今後、保守はxlsmファイルの方のみを行う予定です。
