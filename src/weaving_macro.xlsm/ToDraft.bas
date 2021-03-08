@@ -1,6 +1,6 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "ToDraft"
 '-----------------------------------------------------------------
-' 織物用組織図＆配色図マクロ
+' 綜絖の通し方図・タイアップ・踏み方図から、組織図や配色図を作成
 '   by Riko(https://github.com/riko122/WeavingMacro)
 ' This software is released under the Mozilla Public License 2.0.
 '-----------------------------------------------------------------
@@ -30,35 +30,13 @@ Dim kind As String ' 踏み木を踏んだら、綜絖が上がるか下がるか。
 Dim tie_up_position As String 'タイアップをどの位置にするか
 
 '初期値設定
-Private Sub init()
+Private Sub initToDraft()
+    f = readCellValue(7, 5, 4)
+    n = readCellValue(7, 14, 4)
+    w = readCellValue(7, 36, 48)
+    h = readCellValue(7, 46, 48)
     
-    ' 踏み木本数を読み取る。
-    If Cells(7, 5) = "" Then '書いてなければ4を初期値とする
-        Cells(7, 5) = 4
-    End If
-    f = Cells(7, 5)
-    
-    ' 綜絖枚数を読み取る
-    If Cells(7, 14) = "" Then '書いてなければ4を初期値とする
-        Cells(7, 14) = 4
-    End If
-    n = Cells(7, 14)
-        
-    ' 図の幅を読み取る。
-    If Cells(7, 32) = "" Then '書いてなければ48を初期値とする
-        Cells(7, 32) = 48
-    End If
-    w = Cells(7, 32)
-    
-    ' 図の高さを読み取る。
-    If Cells(7, 42) = "" Then '書いてなければ48を初期値とする
-        Cells(7, 42) = 48
-    End If
-    h = Cells(7, 42)
-    
-    ' タイアップの位置を読み取る
-    tie_up_position = Cells(7, 24)
-    
+    tie_up_position = Cells(7, 28)
     Select Case tie_up_position
         Case "右上"
             x0 = 1
@@ -108,9 +86,9 @@ Private Sub init()
 End Sub
 
 ' 初期化ボタンクリックで実行。
-Public Sub clear()
+Public Sub clearToDraft()
 
-    Call init
+    Call init_to_draft
 
     ' クリア。ヘッダー以外の行をちょっと多めに削除する。
     Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
@@ -141,9 +119,9 @@ Public Sub clear()
     ' 経糸色指定行に「経糸の色」と書く
     Range(Cells(y9, x2), Cells(y9, x3)).Select
     If x1 < x2 Then
-        ActiveCell.FormulaR1C1 = "←経糸の色"
+        ActiveCell.FormulaR1C1 = "経糸の色"
     Else
-        ActiveCell.FormulaR1C1 = "経糸の色→"
+        ActiveCell.FormulaR1C1 = "経糸の色"
     End If
     With Selection.Font
         .Size = 6
@@ -161,9 +139,9 @@ Public Sub clear()
     ' 緯糸色指定列に「緯糸の色」と書く
     Range(Cells(y0, x9), Cells(y1, x9)).Select
     If y1 < y2 Then
-        ActiveCell.FormulaR1C1 = "緯糸の色→"
+        ActiveCell.FormulaR1C1 = "緯糸の色"
     Else
-        ActiveCell.FormulaR1C1 = "←緯糸の色"
+        ActiveCell.FormulaR1C1 = "緯糸の色"
     End If
     With Selection.Font
         .Size = 6
@@ -205,7 +183,7 @@ Public Sub black()
     Dim initRowStatus() As Boolean
     Dim currentRowStatus() As Boolean
     
-    Call init
+    Call initToDraft
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
@@ -256,7 +234,7 @@ Public Sub color()
     Dim currentRowStatus() As Boolean
     Dim beforeRowStatus() As Boolean
     
-    Call init
+    Call initToDraft
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
