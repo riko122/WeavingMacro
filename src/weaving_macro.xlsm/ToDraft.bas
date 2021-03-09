@@ -88,7 +88,7 @@ End Sub
 ' 初期化ボタンクリックで実行。
 Public Sub clearToDraft()
 
-    Call init_to_draft
+    Call initToDraft
 
     ' クリア。ヘッダー以外の行をちょっと多めに削除する。
     Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
