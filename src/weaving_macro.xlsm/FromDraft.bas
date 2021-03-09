@@ -135,7 +135,7 @@ Public Sub make()
   
     ' 1. 綜絖の通し方を考える。
     a = 0
-    For i = x0 To x1
+    For i = x1 To x0 Step -1
         ' 現在列のパターンを取得する
         status(a) = getCurrentColumnStatus(i)
         ' 空き羽の場合はどこも黒くしない
@@ -154,7 +154,7 @@ Public Sub make()
                 Exit For
             End If
         Next j
-        ' 見つからなかった場合は、新しい行なので14+aを黒くする
+        ' 見つからなかった場合は、新しい行なのでy0+aを黒くする
         If found = False Then
             Cells(y0 + a, i).Interior.ColorIndex = 1
             a = a + 1 ' aは次を使う
@@ -170,7 +170,7 @@ Continue:
     
     ' 2. レバー式の踏み木を考える
     For i = y0 To y1
-        For j = x0 To x1
+        For j = x1 To x0 Step -1
             ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
             If Cells(i, j).Interior.ColorIndex = 1 Then
                 ' Tie-upでその行が黒い列を探す
