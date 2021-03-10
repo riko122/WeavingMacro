@@ -164,16 +164,22 @@ Public Sub make()
         ' 綜絖通し方図で黒くする行を決める
         found = False
         ' 今までに同じパターンがあれば、そのパターンと同じ行を黒くする
-        For j = 0 To a - 1
-            If status(j) = status(a) Then
-                Cells(y0 + j, i).Interior.ColorIndex = 1
-                found = True
-                ' aは再利用
-                Exit For
-            End If
-        Next j
-        ' 見つからなかった場合は、新しい行なのでy0+aを黒くする
+        If a > 0 Then
+            For j = 0 To a - 1
+                If status(j) = status(a) Then
+                    Cells(y0 + j, i).Interior.ColorIndex = 1
+                    found = True
+                    ' aは再利用
+                    Exit For
+                End If
+            Next j
+        End If
+        ' 見つからなかった場合(a=0の時も)は、新しい行なのでy0+aを黒くする
         If found = False Then
+            If a >= n Then
+                MsgBox ("この組織図を実現するには綜絖が足りません")
+                Exit Sub
+            End If
             Cells(y0 + a, i).Interior.ColorIndex = 1
             a = a + 1 ' aは次を使う
         End If
