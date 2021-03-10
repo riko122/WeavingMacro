@@ -1,4 +1,4 @@
-Attribute VB_Name = "ToDraft"
+Attribute VB_Name = "ToDrawDown"
 '-----------------------------------------------------------------
 ' 綜絖の通し方図・タイアップ・踏み方図から、組織図や配色図を作成
 '   by Riko(https://github.com/riko122/WeavingMacro)
@@ -30,7 +30,7 @@ Dim kind As String ' 踏み木を踏んだら、綜絖が上がるか下がるか。
 Dim tie_up_position As String 'タイアップをどの位置にするか
 
 '初期値設定
-Private Sub initToDraft()
+Private Sub initToDrawDown()
     f = readCellValue(7, 5, 4)
     n = readCellValue(7, 14, 4)
     w = readCellValue(7, 36, 48)
@@ -86,9 +86,9 @@ Private Sub initToDraft()
 End Sub
 
 ' 初期化ボタンクリックで実行。
-Public Sub clearToDraft()
+Public Sub clearToDrawDown()
 
-    Call initToDraft
+    Call initToDrawDown
 
     ' クリア。ヘッダー以外の行をちょっと多めに削除する。
     Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
@@ -183,7 +183,7 @@ Public Sub black()
     Dim initRowStatus() As Boolean
     Dim currentRowStatus() As Boolean
     
-    Call initToDraft
+    Call initToDrawDown
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
@@ -199,12 +199,12 @@ Public Sub black()
     firstC = firstColumn()
     lastC = lastColumn()
     
-    firstR = firstRow()
+    firstR = firstRowOnTreadling()
     If firstR = 0 Then
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    lastR = lastRow()
+    lastR = lastRowOnTreadling()
     
     initRowStatus = setInitRowStatus()
     
@@ -234,7 +234,7 @@ Public Sub color()
     Dim currentRowStatus() As Boolean
     Dim beforeRowStatus() As Boolean
     
-    Call initToDraft
+    Call initToDrawDown
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
@@ -253,12 +253,12 @@ Public Sub color()
     End If
     lastC = lastColumn()
 
-    firstR = firstRow()
+    firstR = firstRowOnTreadling()
     If firstR = 0 Then
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    lastR = lastRow()
+    lastR = lastRowOnTreadling()
     
     initRowStatus = setInitRowStatus()
     For i = x0 To x1
@@ -361,7 +361,7 @@ Private Function setInitRowStatus() As Boolean()
 End Function
 
 ' 組織図の対象開始行(踏み方図に黒マスがある最初の行)を得る
-Private Function firstRow() As Integer
+Private Function firstRowOnTreadling() As Integer
     Dim first As Integer
     Dim k As Integer
     Dim l As Integer
@@ -376,14 +376,14 @@ Private Function firstRow() As Integer
             End If
         Next
         If first > 0 Then
-            Exit For '有効行があればそこがラスト行なので終了
+            Exit For '有効行があればそこが開始行なので終了
         End If
     Next
-    firstRow = first
+    firstRowOnTreadling = first
 End Function
 
 ' 組織図の対象最終行(踏み方図に黒マスがある最後の行)を得る
-Private Function lastRow() As Integer
+Private Function lastRowOnTreadling() As Integer
     Dim last As Integer
     Dim k As Integer
     Dim l As Integer
@@ -401,7 +401,7 @@ Private Function lastRow() As Integer
             Exit For '有効行があればそこがラスト行なので終了
         End If
     Next
-    lastRow = last
+    lastRowOnTreadling = last
 End Function
 
 ' 組織図の対象開始列（綜絖の通し方図に黒マスがある最初の列）を得る

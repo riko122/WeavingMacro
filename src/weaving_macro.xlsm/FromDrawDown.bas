@@ -1,4 +1,4 @@
-Attribute VB_Name = "FromDraft"
+Attribute VB_Name = "FromDrawDown"
 '-----------------------------------------------------------------
 ' 組織図から完全意匠図を作成
 '   by Riko(https://github.com/riko122/WeavingMacro)
@@ -27,7 +27,7 @@ Dim kind As String ' 踏み木を踏んだら、綜絖が上がるか下がるか。
 Dim tie_up_position As String 'タイアップをどの位置にするか
 
 '初期値設定
-Private Sub initFromDraft()
+Private Sub initFromDrawDown()
     f = readCellValue(7, 5, 4)
     n = readCellValue(7, 14, 4)
     w = readCellValue(7, 36, 48)
@@ -75,7 +75,7 @@ Private Sub initFromDraft()
 End Sub
 
 Public Sub makeCanvas()
-    Call initFromDraft
+    Call initFromDrawDown
     
     ' クリア。ヘッダー以外の行をちょっと多めに削除する。
     Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
@@ -125,15 +125,33 @@ End Sub
 
 Public Sub make()
     Dim i As Integer
+    Dim j As Integer
+    Dim k As Integer
     Dim a As Integer
-    Dim j, k, s As Integer
-    Dim status(4) As String ' とりあえず4枚綜絖しばりなので4
+    Dim s As Integer
+    Dim status() As String
     Dim found As Boolean
+    Dim firstR As Integer
+    Dim lastR As Integer
     
-    Call initFromDraft
- 
-  
-    ' 1. 綜絖の通し方を考える。
+    Call initFromDrawDown
+    ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
+    kind = Cells(6, 46)  ' ↑か↓
+    
+    ReDim status(n)
+    
+    ' 綜絖の通し方図と踏み方図の範囲をクリア
+    Range(Cells(y0, x0), Cells(y1, x1)).Interior.ColorIndex = xlNone
+    Range(Cells(y2, x2), Cells(y3, x3)).Interior.ColorIndex = xlNone
+    
+    firstR = firstRowOnDrawDown()
+    If firstR = 0 Then
+        MsgBox ("組織図が黒く塗られていません")
+        Exit Sub
+    End If
+    lastR = lastRowOnDrawDown()
+    
+    ' 綜絖の通し方を考える。
     a = 0
     For i = x1 To x0 Step -1
         ' 現在列のパターンを取得する
@@ -162,13 +180,13 @@ Public Sub make()
 Continue:
     Next i
     
-    ' 2. Tie-Upが書かれているかどうか。単式か複式かもチェックしないとな。
+    ' Tie-Upが書かれているかどうか。単式か複式かもチェックしないとな。
     If getTieUpStatus = False Then
         MsgBox ("現在のところ単式でタイアップが描かれていないとダメです")
         Exit Sub
     End If
     
-    ' 2. レバー式の踏み木を考える
+    ' 踏み木を考える
     For i = y0 To y1
         For j = x1 To x0 Step -1
             ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
@@ -176,7 +194,8 @@ Continue:
                 ' Tie-upでその行が黒い列を探す
                 For k = x2 To x3
                     If Cells(i, k).Interior.ColorIndex = 1 Then
-                        Range(Cells(y2, j), Cells(y3, j)).Copy Cells(y2, k)
+                        Call copyDrawDownToTreadling(firstR, lastR, j, k)
+                        'Range(Cells(y2, j), Cells(y3, j)).Copy Cells(y2, k)
                         Exit For
                     End If
                 Next k
@@ -184,6 +203,23 @@ Continue:
             End If
         Next j
     Next i
+End Sub
+
+' 組織図のfromClm列の状態をもとに、踏み方図のtoClm列の状態を決める
+' ↑の場合はそのままコピー、下の場合は白黒反転コピー
+Private Sub copyDrawDownToTreadling(firstRow As Integer, lastRow As Integer, fromClm As Integer, toClm As Integer)
+    Dim i As Integer
+    
+    If kind = "↑" Then ' 天秤式など
+        Range(Cells(firstRow, fromClm), Cells(lastRow, fromClm)).Copy Cells(y2, toClm)
+    Else ' ろくろ式など
+        For i = firstRow To lastRow
+            If Cells(i, fromClm).Interior.ColorIndex <> 1 Then
+                Cells(i, toClm).Interior.ColorIndex = 1
+            End If
+        Next i
+    End If
+    
 End Sub
 
 Private Function getCurrentColumnStatus(col As Integer) As String
@@ -234,3 +270,46 @@ Private Function getTieUpStatus() As Boolean
     Next i
 End Function
 
+' 組織図に黒マスがある最初の行を得る
+Private Function firstRowOnDrawDown() As Integer
+    Dim first As Integer
+    Dim k As Integer
+    Dim l As Integer
+    
+    first = 0
+    For l = y2 To y3
+        '組織図対象列で黒のマスを探す。黒のマスがあればその行は有効
+        For k = x0 To x1
+            If Cells(l, k).Interior.ColorIndex = 1 Then
+                first = l
+                Exit For
+            End If
+        Next
+        If first > 0 Then
+            Exit For '有効行があればそこが開始行なので終了
+        End If
+    Next
+    firstRowOnDrawDown = first
+End Function
+
+' 組織図に黒マスがある最後の行を得る
+Private Function lastRowOnDrawDown() As Integer
+    Dim last As Integer
+    Dim k As Integer
+    Dim l As Integer
+    
+    last = 0
+    For l = y3 To y2 Step -1
+        '踏み方図対象列で黒のマスを探す。黒のマスがあればその行は有効
+        For k = x0 To x1
+            If Cells(l, k).Interior.ColorIndex = 1 Then
+                last = l
+                Exit For
+            End If
+        Next
+        If last > 0 Then
+            Exit For '有効行があればそこがラスト行なので終了
+        End If
+    Next
+    lastRowOnDrawDown = last
+End Function
