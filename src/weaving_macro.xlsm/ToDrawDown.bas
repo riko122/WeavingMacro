@@ -6,7 +6,7 @@ Attribute VB_Name = "ToDrawDown"
 '-----------------------------------------------------------------
 Option Explicit
 
-Const header_line = 7 ' ヘッダー部分の行数
+Const HEADER_LINE = 7 ' ヘッダー部分の行数
 
 ' 全サブルーチンで共通に使用する変数
 Dim x0 As Integer '綜絖の通し方図・組織図の基点列
@@ -30,7 +30,7 @@ Dim kind As String ' 踏み木を踏んだら、綜絖が上がるか下がるか。
 Dim tie_up_position As String 'タイアップをどの位置にするか
 
 '初期値設定
-Private Sub initToDrawDown()
+Private Sub init()
     f = readCellValue(7, 5, 4)
     n = readCellValue(7, 14, 4)
     w = readCellValue(7, 36, 48)
@@ -44,7 +44,7 @@ Private Sub initToDrawDown()
             x2 = x1 + 2
             x3 = x2 + f - 1
             x9 = x3 + 2
-            y9 = header_line + 2
+            y9 = HEADER_LINE + 2
             y0 = y9 + 2
             y1 = y0 + n - 1
             y2 = y1 + 2
@@ -55,7 +55,7 @@ Private Sub initToDrawDown()
             x2 = x1 + 2
             x3 = x2 + f - 1
             x9 = x3 + 2
-            y2 = header_line + 2
+            y2 = HEADER_LINE + 2
             y3 = y2 + h - 1
             y0 = y3 + 2
             y1 = y0 + n - 1
@@ -66,7 +66,7 @@ Private Sub initToDrawDown()
             x3 = x2 + f - 1
             x0 = x3 + 2
             x1 = x0 + w - 1
-            y9 = header_line + 2
+            y9 = HEADER_LINE + 2
             y0 = y9 + 2
             y1 = y0 + n - 1
             y2 = y1 + 2
@@ -77,7 +77,7 @@ Private Sub initToDrawDown()
             x3 = x2 + f - 1
             x0 = x3 + 2
             x1 = x0 + w - 1
-            y2 = header_line + 2
+            y2 = HEADER_LINE + 2
             y3 = y2 + h - 1
             y0 = y3 + 2
             y1 = y0 + n - 1
@@ -88,33 +88,18 @@ End Sub
 ' 初期化ボタンクリックで実行。
 Public Sub clearToDrawDown()
 
-    Call initToDrawDown
+    Call init
 
     ' クリア。ヘッダー以外の行をちょっと多めに削除する。
-    Rows(header_line + 1 & ":" & header_line + n + h + 100).Select
+    Rows(HEADER_LINE + 1 & ":" & HEADER_LINE + n + h + 100).Select
     Selection.Delete Shift:=xlUp
 
     ' 対象範囲のマスの高さをそろえる。
-    Rows(header_line + 1 & ":" & header_line + n + h + 5).Select
+    Rows(HEADER_LINE + 1 & ":" & HEADER_LINE + n + h + 5).Select
     Selection.RowHeight = 11
 
-    ' 綜絖通し部分のマス目を書く
-    Range(Cells(y0, x0), Cells(y1, x1)).Select
-    Selection.Borders(xlEdgeLeft).Weight = xlThin
-    Selection.Borders(xlEdgeTop).Weight = xlThin
-    Selection.Borders(xlEdgeBottom).Weight = xlThin
-    Selection.Borders(xlEdgeRight).Weight = xlThin
-    Selection.Borders(xlInsideVertical).Weight = xlThin
-    Selection.Borders(xlInsideHorizontal).Weight = xlThin
-
-    ' タイアップ部分のマス目を書く
-    Range(Cells(y0, x2), Cells(y1, x3)).Select
-    Selection.Borders(xlEdgeLeft).Weight = xlThin
-    Selection.Borders(xlEdgeTop).Weight = xlThin
-    Selection.Borders(xlEdgeBottom).Weight = xlThin
-    Selection.Borders(xlEdgeRight).Weight = xlThin
-    Selection.Borders(xlInsideVertical).Weight = xlThin
-    Selection.Borders(xlInsideHorizontal).Weight = xlThin
+    Call writeGrid(y0, y1, x0, x1) ' 綜絖通し部分のマス目
+    Call writeGrid(y0, y1, x2, x3) ' タイアップ部分のマス目
 
     ' 経糸色指定行に「経糸の色」と書く
     Range(Cells(y9, x2), Cells(y9, x3)).Select
@@ -156,161 +141,139 @@ Public Sub clearToDrawDown()
         .MergeCells = True
     End With
 
-    ' 組織図部分のマス目を書く
-    Call writeDrawUp
-
-    ' 踏み木部分のマス目を書く
-    Range(Cells(y2, x2), Cells(y3, x3)).Select
-    Selection.Borders(xlEdgeLeft).Weight = xlThin
-    Selection.Borders(xlEdgeTop).Weight = xlThin
-    Selection.Borders(xlEdgeBottom).Weight = xlThin
-    Selection.Borders(xlEdgeRight).Weight = xlThin
-    Selection.Borders(xlInsideVertical).Weight = xlThin
-    Selection.Borders(xlInsideHorizontal).Weight = xlThin
-
+    Call writeGrid(y2, y3, x0, x1) ' 組織図部分のマス目
+    Call writeGrid(y2, y3, x2, x3) ' 踏み木部分のマス目
 End Sub
 
 ' 組織図ボタンクリックで実行。
 Public Sub black()
-    Dim firstC As Integer
-    Dim lastC As Integer
-    Dim firstR As Integer
-    Dim lastR As Integer
+    Dim first_clm As Integer
+    Dim last_clm As Integer
+    Dim first_row As Integer
+    Dim last_row As Integer
     Dim i As Integer
     Dim j As Integer
     Dim l As Integer
     Dim k As Integer
-    Dim initRowStatus() As Boolean
-    Dim currentRowStatus() As Boolean
+    Dim init_row_status() As Boolean
+    Dim current_row_status() As Boolean
     
-    Call initToDrawDown
+    Call init
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
-    ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
-    Call writeDrawUp
-    
-    ReDim initRowStatus(w)
-    ReDim currentRowStatus(w)
-
-    ' 組織図対象範囲をクリア
+    ' 組織図部分を書き直す
+    Call writeGrid(y2, y3, x0, x1) ' 組織図部分のマス目
     Range(Cells(y2, x0), Cells(y3, x1)).Interior.ColorIndex = xlNone
     
-    firstC = firstColumn()
-    lastC = lastColumn()
+    ReDim init_row_status(w)
+    ReDim current_row_status(w)
+
+    first_clm = getFirstColumn(y0, y1, x0, x1)
+    If first_clm = 0 Then
+        MsgBox ("綜絖の通し方図が黒く塗られていません")
+        Exit Sub
+    End If
+    last_clm = getLastColumn(y0, y1, x0, x1)
     
-    firstR = firstRowOnTreadling()
-    If firstR = 0 Then
+    first_row = getFirstRow(y2, y3, x2, x3)
+    If first_row = 0 Then
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    lastR = lastRowOnTreadling()
+    last_row = getLastRow(y2, y3, x2, x3)
     
-    initRowStatus = setInitRowStatus()
+    init_row_status = setInitRowStatus()
     
-    For l = firstR To lastR
-        currentRowStatus = getCurrentRowStatus(l, initRowStatus)
-        For i = firstC To lastC
+    For l = first_row To last_row
+        current_row_status = getCurrentRowStatus(l, init_row_status)
+        For i = first_clm To last_clm
             ' 経糸が上のマスは黒く塗る
-            If currentRowStatus(i) = True Then
+            If current_row_status(i) = True Then
                 Cells(l, i).Interior.ColorIndex = 1
             End If
         Next
     Next
-    
 End Sub
 
 ' 配色図ボタンクリックで実行。
 Public Sub color()
-    Dim firstC As Integer
-    Dim lastC As Integer
-    Dim firstR As Integer
-    Dim lastR As Integer
+    Dim first_clm As Integer
+    Dim last_clm As Integer
+    Dim first_row As Integer
+    Dim last_row As Integer
     Dim i As Integer
     Dim j As Integer
     Dim k As Integer
     Dim l As Integer
-    Dim initRowStatus() As Boolean
-    Dim currentRowStatus() As Boolean
-    Dim beforeRowStatus() As Boolean
+    Dim init_row_status() As Boolean
+    Dim current_row_status() As Boolean
+    Dim before_row_status() As Boolean
     
-    Call initToDrawDown
+    Call init
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 40)  ' ↑か↓
     
+    ' 組織図部分を書き直す(色は配色図は上書きするので特に塗りなおさない）
+    Call writeGrid(y2, y3, x0, x1) ' 組織図部分のマス目
     
-    ' 組織図部分のマス目を書く(配色図実行後は、罫線が消えていることがあるから）
-    Call writeDrawUp
-    
-    ReDim initRowStatus(w)
-    ReDim currentRowStatus(w)
-    ReDim beforeRowStatus(w)
+    ReDim init_row_status(w)
+    ReDim current_row_status(w)
+    ReDim before_row_status(w)
 
-    firstC = firstColumn()
-    If firstC = 0 Then
+    first_clm = getFirstColumn(y0, y1, x0, x1)
+    If first_clm = 0 Then
         MsgBox ("綜絖の通し方図が黒く塗られていません")
         Exit Sub
     End If
-    lastC = lastColumn()
+    last_clm = getLastColumn(y0, y1, x0, x1)
 
-    firstR = firstRowOnTreadling()
-    If firstR = 0 Then
+    first_row = getFirstRow(y2, y3, x2, x3)
+    If first_row = 0 Then
         MsgBox ("踏み方図が黒く塗られていません")
         Exit Sub
     End If
-    lastR = lastRowOnTreadling()
+    last_row = getLastRow(y2, y3, x2, x3)
     
-    initRowStatus = setInitRowStatus()
+    init_row_status = setInitRowStatus()
     For i = x0 To x1
-        beforeRowStatus(i) = False
+        before_row_status(i) = False
     Next
 
-    For l = firstR To lastR
-        currentRowStatus = getCurrentRowStatus(l, initRowStatus)
-        For i = firstC To lastC
+    For l = first_row To last_row
+        current_row_status = getCurrentRowStatus(l, init_row_status)
+        For i = first_clm To last_clm
             ' 経糸が上のマスは経糸の色で塗る。そうでなければ緯糸の色で塗る
-            If currentRowStatus(i) = True Then
+            If current_row_status(i) = True Then
                 Cells(l, i).Interior.color = Cells(y9, i).Interior.color
                 ' 前の行も経糸が上なら、上の罫線をなしにする
-                If beforeRowStatus(i) = True Then
+                If before_row_status(i) = True Then
                     Range(Cells(l, i), Cells(l, i)).Borders(xlEdgeTop).LineStyle = xlNone
                 End If
             Else
                 Cells(l, i).Interior.color = Cells(l, x9).Interior.color
                 ' 左のセルも緯糸が上なら、左の罫線をなしにする
-                If i > firstC And currentRowStatus(i - 1) = False Then
+                If i > first_clm And current_row_status(i - 1) = False Then
                     Range(Cells(l, i), Cells(l, i)).Borders(xlEdgeLeft).LineStyle = xlNone
                 End If
             End If
         Next
-        beforeRowStatus = currentRowStatus
+        before_row_status = current_row_status
     Next
 End Sub
 
-' 組織図部分のマス目を書く
-Private Sub writeDrawUp()
-    Range(Cells(y2, x0), Cells(y3, x1)).Select
-    Selection.Borders(xlEdgeLeft).Weight = xlThin
-    Selection.Borders(xlEdgeTop).Weight = xlThin
-    Selection.Borders(xlEdgeBottom).Weight = xlThin
-    Selection.Borders(xlEdgeRight).Weight = xlThin
-    Selection.Borders(xlInsideVertical).Weight = xlThin
-    Selection.Borders(xlInsideHorizontal).Weight = xlThin
-
-End Sub
-
 ' 現在の行の各セルについて、経糸が上になっていればTrue, そうでなければFalseを配列に登録する
-Private Function getCurrentRowStatus(ByVal row As Integer, ByRef initRowStatus() As Boolean) As Boolean()
+Private Function getCurrentRowStatus(ByVal row As Integer, ByRef init_row_status() As Boolean) As Boolean()
     Dim i As Integer
     Dim j As Integer
     Dim k As Integer
     Dim l As Integer
-    Dim currentRowStatus() As Boolean
+    Dim current_row_status() As Boolean
     Dim f As Boolean
     
     ' 配列の初期化
-    ReDim currentRowStatus(w)
-    currentRowStatus = initRowStatus
+    ReDim current_row_status(w)
+    current_row_status = init_row_status
    
     ' 踏み方図で黒いマスを探す。
     For j = x2 To x3
@@ -322,10 +285,10 @@ Private Function getCurrentRowStatus(ByVal row As Integer, ByRef initRowStatus()
                     ' ロクロ式なら、緯糸が上に出るのでFalseにする（そのため初期化で元がTrueにしてある）
                     For i = x0 To x1
                         If Cells(k, i).Interior.ColorIndex = 1 Then
-                            If currentRowStatus(i) = False Then
-                                currentRowStatus(i) = True
+                            If current_row_status(i) = False Then
+                                current_row_status(i) = True
                             Else
-                                currentRowStatus(i) = False
+                                current_row_status(i) = False
                             End If
                         End If
                     Next
@@ -333,120 +296,30 @@ Private Function getCurrentRowStatus(ByVal row As Integer, ByRef initRowStatus()
             Next
         End If
     Next
-    getCurrentRowStatus = currentRowStatus
+    getCurrentRowStatus = current_row_status
 End Function
 
 ' 各行の状態初期化。kindに応じて変わる。
 Private Function setInitRowStatus() As Boolean()
-    Dim initRowStatus() As Boolean
+    Dim init_row_status() As Boolean
     Dim i As Integer
     Dim k As Integer
     
-    ReDim initRowStatus(w)
+    ReDim init_row_status(w)
     ' 配列の初期化
     For i = x0 To x1
         If kind = "↑" Then ' 天秤式など。false(緯糸が上)で初期化
-            initRowStatus(i) = False
+            init_row_status(i) = False
         Else ' ろくろ式など。基本true(経糸が上)で初期化。但し空羽はfalse。
-            initRowStatus(i) = False
+            init_row_status(i) = False
             For k = y0 To y1
                 If Cells(k, i).Interior.ColorIndex = 1 Then
-                    initRowStatus(i) = True
+                    init_row_status(i) = True
                     Exit For
                 End If
             Next
         End If
     Next
-    setInitRowStatus = initRowStatus
+    setInitRowStatus = init_row_status
 End Function
-
-' 組織図の対象開始行(踏み方図に黒マスがある最初の行)を得る
-Private Function firstRowOnTreadling() As Integer
-    Dim first As Integer
-    Dim k As Integer
-    Dim l As Integer
-    
-    first = 0
-    For l = y2 To y3
-        '踏み方図対象列で黒のマスを探す。黒のマスがあればその行は有効
-        For k = x2 To x3
-            If Cells(l, k).Interior.ColorIndex = 1 Then
-                first = l
-                Exit For
-            End If
-        Next
-        If first > 0 Then
-            Exit For '有効行があればそこが開始行なので終了
-        End If
-    Next
-    firstRowOnTreadling = first
-End Function
-
-' 組織図の対象最終行(踏み方図に黒マスがある最後の行)を得る
-Private Function lastRowOnTreadling() As Integer
-    Dim last As Integer
-    Dim k As Integer
-    Dim l As Integer
-    
-    last = 0
-    For l = y3 To y2 Step -1
-        '踏み方図対象列で黒のマスを探す。黒のマスがあればその行は有効
-        For k = x2 To x3
-            If Cells(l, k).Interior.ColorIndex = 1 Then
-                last = l
-                Exit For
-            End If
-        Next
-        If last > 0 Then
-            Exit For '有効行があればそこがラスト行なので終了
-        End If
-    Next
-    lastRowOnTreadling = last
-End Function
-
-' 組織図の対象開始列（綜絖の通し方図に黒マスがある最初の列）を得る
-Private Function firstColumn() As Integer
-    Dim first As Integer
-    Dim i As Integer
-    Dim k As Integer
-    
-    first = 0
-    For i = x0 To x1
-        '綜絖の通し方図対象行で、黒のマスを探す。黒のマスがあればその行は有効
-        For k = y0 To y1
-            If Cells(k, i).Interior.ColorIndex = 1 Then
-                first = i
-                Exit For
-            End If
-        Next
-        If first > 0 Then
-            Exit For
-        End If
-    Next
-    firstColumn = first
-End Function
-
-' 組織図の対象最終列（綜絖の通し方図に黒マスがある最後の列）を得る
-Private Function lastColumn() As Integer
-    Dim last As Integer
-    Dim i As Integer
-    Dim k As Integer
-    
-    last = 0
-    For i = x1 To x0 Step -1
-        '綜絖の通し方図対象行で、黒のマスを探す。黒のマスがあればその行は有効
-        For k = y0 To y1
-            If Cells(k, i).Interior.ColorIndex = 1 Then
-                last = i
-                Exit For
-            End If
-        Next
-        If last > 0 Then
-            Exit For
-        End If
-    Next
-    lastColumn = last
-End Function
-
-
 
