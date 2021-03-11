@@ -155,10 +155,12 @@ Continue:
     Next i
     
     ' Tie-Upが書かれているかどうか。単式か複式かもチェックしないとな。
-    If getTieUpStatus = False Then
-        MsgBox ("現在のところ単式でタイアップが描かれていないとダメです")
+    If getFirstRow(y0, y1, x2, x3) = 0 Then
+        MsgBox ("現在のところ踏み木１本：綜絖１枚のものにしか対応していません")
         Exit Sub
     End If
+    ' MsgBox (getMaxShaftPerPedal) 単式か複式かチェック用
+    
     
     ' 踏み木を考える
     For i = y0 To y1
@@ -166,13 +168,19 @@ Continue:
             ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
             If Cells(i, j).Interior.ColorIndex = 1 Then
                 ' Tie-upでその行が黒い列を探す
+                found = False
                 For k = x2 To x3
                     If Cells(i, k).Interior.ColorIndex = 1 Then
                         Call copyDrawDownToTreadling(first_row, last_row, j, k)
+                        found = True
                         Exit For
                     End If
                 Next k
-                Exit For
+                ' 全部見ても見つからなかった場合
+                If found = False Then
+                    MsgBox ("この組織図を実現するにはタイアップが不適切です")
+                    Exit Sub
+                End If
             End If
         Next j
     Next i
@@ -211,21 +219,25 @@ Private Function getCurrentColumnStatus(clm As Integer) As String
     getCurrentColumnStatus = status
 End Function
 
-' Tie-Upが最初から書かれているかどうか。
-' 黒いところが一個でもあれば書かれているとみなす
-' 単式か複式かもチェックしたい。
-Private Function getTieUpStatus() As Boolean
-    Dim i, j As Integer
-    getTieUpStatus = False
+' 一本の踏み木につながっている綜絖枠の最大数
+Private Function getMaxShaftPerPedal()
+    Dim i As Integer
+    Dim j As Integer
+    Dim cnt As Integer
+    Dim max As Integer
     
-    For i = y0 To y1
-        For j = x2 To x3
-            If (Cells(i, j).Interior.ColorIndex = 1) Then
-                getTieUpStatus = True
-                Exit Function
+    max = 0
+    For i = x2 To x3
+        cnt = 0
+        For j = y0 To y1
+            If (Cells(j, i).Interior.ColorIndex = 1) Then
+                cnt = cnt + 1
             End If
         Next j
+        If cnt > max Then
+            max = cnt
+        End If
     Next i
+    getMaxShaftPerPedal = max
 End Function
-
 
