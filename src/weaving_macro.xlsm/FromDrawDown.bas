@@ -101,14 +101,16 @@ Public Sub make()
     Dim found As Boolean
     Dim first_row As Integer
     Dim last_row As Integer
-    Dim shaft_row() As Integer
+    Dim first_clm As Integer
+    Dim last_clm As Integer
+    Dim tieup_status() As Integer
     
     Call init
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 46)  ' ↑か↓
     
     ReDim status(n)
-    ReDim shaft_row(n)
+    ReDim tieup_status(n)
     
     ' 綜絖の通し方図と踏み方図の範囲をクリア
     Range(Cells(y0, x0), Cells(y1, x1)).Interior.ColorIndex = xlNone
@@ -120,10 +122,12 @@ Public Sub make()
         Exit Sub
     End If
     last_row = getLastRow(y2, y3, x0, x1)
+    first_clm = getFirstColumn(y2, y3, x0, x1)
+    last_clm = getLastColumn(y2, y3, x0, x1)
     
     ' 綜絖の通し方を考える。
     a = 0
-    For i = x1 To x0 Step -1
+    For i = last_clm To first_clm Step -1
         ' 現在列のパターンを取得する
         status(a) = getCurrentColumnStatus(i)
         ' 空き羽の場合はどこも黒くしない
@@ -164,7 +168,7 @@ Continue:
     ' 踏み木を考える
     If getMaxShaftPerPedal = 1 Then
         For i = y0 To y1
-            For j = x1 To x0 Step -1
+            For j = last_clm To first_clm Step -1
                 ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
                 If Cells(i, j).Interior.ColorIndex = 1 Then
                     ' Tie-upでその行が黒い列を探す
@@ -191,10 +195,10 @@ Continue:
             ' 全列読まなくても、綜絖の枚数分でいい（あとは同じパターンだから）
             a = 0
             For i = y0 To y1
-                For j = x1 To x0 Step -1
+                For j = last_clm To first_clm Step -1
                     ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
                     If Cells(i, j).Interior.ColorIndex = 1 Then
-                        shaft_row(a) = getTieupStatus(k, j)
+                        tieup_status(a) = getTieupStatus(k, j)
                         a = a + 1
                         Exit For
                     End If
@@ -204,7 +208,7 @@ Continue:
             For j = x2 To x3
                 found = True
                 For a = 0 To n - 1
-                    If Cells(y0 + a, j).Interior.ColorIndex <> shaft_row(a) Then
+                    If Cells(y0 + a, j).Interior.ColorIndex <> tieup_status(a) Then
                         found = False
                         Exit For ' 違ったので次の列を探す
                     End If
