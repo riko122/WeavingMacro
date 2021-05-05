@@ -96,21 +96,19 @@ Public Sub make()
     Dim j As Integer
     Dim k As Integer
     Dim a As Integer
-    Dim s As Integer
+    Dim b As Integer
     Dim status() As String
     Dim found As Boolean
     Dim first_row As Integer
     Dim last_row As Integer
     Dim first_clm As Integer
     Dim last_clm As Integer
-    Dim tieup_status() As Integer
     
     Call init
     ' 踏み木を踏んだら、綜絖が上がるか下がるかを読み取る。
     kind = Cells(6, 46)  ' ↑か↓
     
     ReDim status(n)
-    ReDim tieup_status(n)
     
     ' 綜絖の通し方図と踏み方図の範囲をクリア
     Range(Cells(y0, x0), Cells(y1, x1)).Interior.ColorIndex = xlNone
@@ -160,13 +158,12 @@ Public Sub make()
 Continue:
     Next i
     
-    If getFirstRow(y0, y1, x2, x3) = 0 Then
-        MsgBox ("現在のところタイアップが書かれているものにしか対応していません")
+    ' 踏み木を考える
+    If getMaxShaftPerPedal > 1 Then
+        MsgBox ("複式タイアップの場合はタイアップは書かないでください")
         Exit Sub
     End If
-    
-    ' 踏み木を考える
-    If getMaxShaftPerPedal = 1 Then
+    If getMaxShaftPerPedal = 1 Then ' 単式タイアップで書かれている場合
         For i = y0 To y1
             For j = last_clm To first_clm Step -1
                 ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
@@ -189,63 +186,61 @@ Continue:
                 End If
             Next j
         Next i
-    Else
-        For k = first_row To last_row
-            ' 各行について、綜絖何枚めが黒いか（経糸が上か）を読み取る
-            ' 全列読まなくても、綜絖の枚数分でいい（あとは同じパターンだから）
-            a = 0
-            For i = y0 To y1
-                For j = last_clm To first_clm Step -1
-                    ' 綜絖の通し方のi行目で最初に出てくる黒い列を探す
-                    If Cells(i, j).Interior.ColorIndex = 1 Then
-                        tieup_status(a) = getTieupStatus(k, j)
-                        a = a + 1
+    Else ' 複式タイアップ
+        ReDim status(f)
+        a = 0
+        For i = first_row To last_row
+            ' 現在行のパターンを取得する
+            status(a) = getCurrentRowStatus(i)
+            ' 緯糸を入れない時は、どこも黒くしない
+            If InStr(status(a), "1") = 0 Then
+                GoTo Continue2
+            End If
+            
+            ' 踏み方図で黒くする列を決める
+            found = False
+            ' 今までに同じパターンがあれば、そのパターンと同じ列を黒くする
+            If a > 0 Then
+                For j = 0 To a - 1
+                    If status(j) = status(a) Then
+                        Cells(i, x2 + j).Interior.ColorIndex = 1
+                        found = True
+                        ' aは再利用
                         Exit For
                     End If
                 Next j
-            Next i
-            ' タイアップで、その行が黒い列を探す
-            For j = x2 To x3
-                found = True
-                For a = 0 To n - 1
-                    If Cells(y0 + a, j).Interior.ColorIndex <> tieup_status(a) Then
-                        found = False
-                        Exit For ' 違ったので次の列を探す
-                    End If
-                Next a
-                ' 違わないままFor aが終わった場合は、jが該当する踏み木
-                If found Then
-                    Cells(k, j).Interior.ColorIndex = 1
-                    Exit For
-                End If
-            Next j
-            If found = False Then ' タイアップ全部見ても見つからない場合
-                MsgBox ("この組織図を実現するにはタイアップが不適切です")
-                Exit Sub
             End If
-        Next k
+            ' 見つからなかった場合(a=0の時も)は、新しい列を黒くする
+            If found = False Then
+                If a >= f Then
+                    MsgBox ("この組織図を実現するには踏み木が足りません")
+                    Exit Sub
+                End If
+                Cells(i, x2 + a).Interior.ColorIndex = 1
+                a = a + 1 ' aは次を使う
+            End If
+Continue2:
+        Next i
+        ' タイアップを考える
+        For i = x2 To x3
+            a = getFirstRow(y2, y3, i, i) ' 踏み木のi列目が黒い最初の行
+            If a <> 0 Then
+                For j = y0 To y1
+                    b = getLastColumn(j, j, first_clm, last_clm) ' 綜絖の通し方のj行目が黒い最後の列
+                    If kind = "↑" Then ' 天秤式など
+                        If Cells(a, b).Interior.ColorIndex = 1 Then
+                            Cells(j, i).Interior.ColorIndex = 1
+                        End If
+                    Else
+                        If Cells(a, b).Interior.ColorIndex <> 1 Then
+                            Cells(j, i).Interior.ColorIndex = 1
+                        End If
+                    End If
+                Next j
+            End If
+        Next i
     End If
 End Sub
-
-' 綜絖が通っているclm列が、組織図のrow行目で黒いか白いかで、TieUpの状態を示す
-' 例えば4枚綜絖の1と4が黒い行は、↑なら1と4が黒いタイアップの列、
-' ↓なら2と3が黒いタイアップの列を探すので、↑か↓かによって返すものが逆。
-Private Function getTieupStatus(row As Integer, clm As Integer) As Integer
-
-    If kind = "↑" Then ' 天秤式など。組織図で黒ければタイアップで黒い
-        If Cells(row, clm).Interior.ColorIndex = 1 Then
-            getTieupStatus = 1
-        Else
-            getTieupStatus = xlNone
-        End If
-    Else ' ろくろ式など。組織図で白ければタイアップで黒い
-        If Cells(row, clm).Interior.ColorIndex <> 1 Then
-            getTieupStatus = 1
-        Else
-            getTieupStatus = xlNone
-        End If
-    End If
-End Function
 
 ' 組織図のfrom_clm列の状態をもとに、踏み方図のto_clm列の状態を決める
 ' ↑の場合はそのままコピー、↓の場合は白黒反転コピー
@@ -265,6 +260,7 @@ Private Sub copyDrawDownToTreadling(first_row As Integer, last_row As Integer, _
     
 End Sub
 
+' 1列分、マスが黒いか白いかを1と0の文字列で返す
 Private Function getCurrentColumnStatus(clm As Integer) As String
     Dim i As Integer
     Dim status As String
@@ -278,6 +274,22 @@ Private Function getCurrentColumnStatus(clm As Integer) As String
         End If
     Next i
     getCurrentColumnStatus = status
+End Function
+
+' 1行分、マスが黒いか白いかを1と0の文字列で返す
+Private Function getCurrentRowStatus(row As Integer) As String
+    Dim i As Integer
+    Dim status As String
+    
+    status = ""
+    For i = x0 To x1
+        If (Cells(row, i).Interior.ColorIndex = 1) Then
+            status = status + "1"
+        Else
+            status = status + "0"
+        End If
+    Next i
+    getCurrentRowStatus = status
 End Function
 
 ' 一本の踏み木につながっている綜絖枠の最大数
